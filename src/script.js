@@ -1,6 +1,11 @@
 import './style.css'
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+
+import starVertexShader from './shaders/star/vertex.glsl'
+import starFragmentShader from './shaders/star/fragment.glsl'
+
+import backgroundVertexShader from './shaders/background/vertex.glsl'
+import backgroundFragmentShader from './shaders/background/fragment.glsl'
 
 /**
  * Base
@@ -39,23 +44,105 @@ window.addEventListener('resize', () =>
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.x = 1
-camera.position.y = 1
+// camera.position.x = 1
+// camera.position.y = 1
 camera.position.z = 1
+camera.lookAt(0, 0, 0)
 scene.add(camera)
 
-// Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
+// Cursor
+const cursor = {
+    x: 0,
+    y: 0
+}
+
+window.addEventListener('mousemove', (event) =>
+{
+    cursor.x = (event.clientX / sizes.width - 0.5) * 0.15
+    cursor.y = - (event.clientY / sizes.height - 0.5) * 0.15
+})
 
 /**
- * Cube
+ * Particles
  */
-const cube = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshBasicMaterial({ color: 0xff0000 })
-)
-scene.add(cube)
+const parameters = {}
+parameters.count = 200
+parameters.size = 0.01
+parameters.color = new THREE.Color(0.1, 0.1, 0.125)
+
+let geometry = null
+let material = null
+let points = null
+
+const generateStars = () =>
+{
+    // Destroy old stars
+    if(points !== null)
+    {
+        geometry.dispose()
+        material.dispose()
+        scene.remove(points)
+    }
+
+    // Geometry
+    geometry = new THREE.BufferGeometry()
+
+    const positions = new Float32Array(parameters.count * 3)
+    const colors = new Float32Array(parameters.count * 3)
+    const scales = new Float32Array(parameters.count * 1)
+
+    for(let i = 0; i < parameters.count; i++)
+    {
+        const i3 = i * 3
+
+        positions[i3    ] = (Math.random() - 0.5) * 3
+        positions[i3 + 1] = (Math.random() - 0.5) * 3
+        positions[i3 + 2] = (Math.random() - 0.5) * 3
+
+        colors[i3    ] = parameters.color.r
+        colors[i3 + 1] = parameters.color.g
+        colors[i3 + 2] = parameters.color.b
+
+        scales[i] = Math.random()
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+    geometry.setAttribute('aScale', new THREE.BufferAttribute(scales, 1))
+
+    // Material
+    material = new THREE.ShaderMaterial({
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        vertexColors: true,
+
+        uniforms:
+        {
+            uSize: { value: 100 * renderer.getPixelRatio() },
+            uTime: { value: 0 }
+        },
+
+        vertexShader: starVertexShader,
+        fragmentShader: starFragmentShader
+    })
+
+    // Points
+    points = new THREE.Points(geometry, material)
+    scene.add(points)
+}
+
+/**
+ * Background
+ */
+const backgroundGeometry = new THREE.PlaneGeometry(2, 2, 1, 1)
+const backgroundMaterial = new THREE.ShaderMaterial({
+    depthWrite: false,
+
+    vertexShader: backgroundVertexShader,
+    fragmentShader: backgroundFragmentShader
+})
+const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial)
+scene.add(background)
 
 /**
  * Renderer
@@ -66,6 +153,11 @@ const renderer = new THREE.WebGLRenderer({
 })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+/**
+ * Generate stars
+ */
+generateStars()
 
 /**
  * Animate
@@ -79,8 +171,13 @@ const tick = () =>
     const deltaTime = elapsedTime - lastElapsedTime
     lastElapsedTime = elapsedTime
 
-    // Update controls
-    controls.update()
+    // Update camera
+    const target = new THREE.Vector3(cursor.x, cursor.y, camera.position.z)
+    camera.lookAt(0, 0, 0)
+    camera.position.lerp(target, 0.05)
+
+    // Update stars
+    material.uniforms.uTime.value = elapsedTime
 
     // Render
     renderer.render(scene, camera)
