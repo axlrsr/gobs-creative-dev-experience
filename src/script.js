@@ -1,8 +1,8 @@
 import './style.css'
 import * as THREE from 'three'
 
-import starVertexShader from './shaders/star/vertex.glsl'
-import starFragmentShader from './shaders/star/fragment.glsl'
+import starsVertexShader from './shaders/stars/vertex.glsl'
+import starsFragmentShader from './shaders/stars/fragment.glsl'
 
 import backgroundVertexShader from './shaders/background/vertex.glsl'
 import backgroundFragmentShader from './shaders/background/fragment.glsl'
@@ -44,8 +44,6 @@ window.addEventListener('resize', () =>
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-// camera.position.x = 1
-// camera.position.y = 1
 camera.position.z = 1
 camera.lookAt(0, 0, 0)
 scene.add(camera)
@@ -70,22 +68,22 @@ parameters.count = 200
 parameters.size = 0.01
 parameters.color = new THREE.Color(0.1, 0.1, 0.125)
 
-let geometry = null
-let material = null
-let points = null
+let starsGeometry = null
+let starsMaterial = null
+let stars = null
 
 const generateStars = () =>
 {
     // Destroy old stars
-    if(points !== null)
+    if(stars !== null)
     {
-        geometry.dispose()
-        material.dispose()
-        scene.remove(points)
+        starsGeometry.dispose()
+        starsMaterial.dispose()
+        scene.remove(stars)
     }
 
     // Geometry
-    geometry = new THREE.BufferGeometry()
+    starsGeometry = new THREE.BufferGeometry()
 
     const positions = new Float32Array(parameters.count * 3)
     const colors = new Float32Array(parameters.count * 3)
@@ -106,12 +104,12 @@ const generateStars = () =>
         scales[i] = Math.random()
     }
 
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-    geometry.setAttribute('aScale', new THREE.BufferAttribute(scales, 1))
+    starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    starsGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+    starsGeometry.setAttribute('aScale', new THREE.BufferAttribute(scales, 1))
 
     // Material
-    material = new THREE.ShaderMaterial({
+    starsMaterial = new THREE.ShaderMaterial({
         depthWrite: false,
         blending: THREE.AdditiveBlending,
         vertexColors: true,
@@ -122,13 +120,13 @@ const generateStars = () =>
             uTime: { value: 0 }
         },
 
-        vertexShader: starVertexShader,
-        fragmentShader: starFragmentShader
+        vertexShader: starsVertexShader,
+        fragmentShader: starsFragmentShader
     })
 
     // Points
-    points = new THREE.Points(geometry, material)
-    scene.add(points)
+    stars = new THREE.Points(starsGeometry, starsMaterial)
+    scene.add(stars)
 }
 
 /**
@@ -177,7 +175,7 @@ const tick = () =>
     camera.position.lerp(target, 0.05)
 
     // Update stars
-    material.uniforms.uTime.value = elapsedTime
+    starsMaterial.uniforms.uTime.value = elapsedTime
 
     // Render
     renderer.render(scene, camera)
