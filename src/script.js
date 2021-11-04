@@ -64,12 +64,33 @@ window.addEventListener('mousemove', (event) =>
 })
 
 /**
- * Particles
+ * Background
+ */
+const backgroundGeometry = new THREE.PlaneGeometry(5, 5, 1, 1)
+const backgroundMaterial = new THREE.ShaderMaterial({
+    depthWrite: false,
+
+    uniforms:
+    {
+        uTime: { value: 0 }
+    },
+
+    vertexShader: backgroundVertexShader,
+    fragmentShader: backgroundFragmentShader
+})
+const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial)
+scene.add(background)
+
+/**
+ * Stars
  */
 const starsParameters = {}
 starsParameters.count = 200
 starsParameters.size = 100
-starsParameters.color = new THREE.Color(0.1, 0.1, 0.125)
+
+const starsColor = `hsl(240, 15%, 15%)`
+
+starsParameters.color = new THREE.Color(starsColor)
 
 let starsGeometry = null
 let starsMaterial = null
@@ -133,25 +154,12 @@ const generateStars = () =>
 }
 
 /**
- * Background
- */
-const backgroundGeometry = new THREE.PlaneGeometry(5, 5, 1, 1)
-const backgroundMaterial = new THREE.ShaderMaterial({
-    depthWrite: false,
-
-    vertexShader: backgroundVertexShader,
-    fragmentShader: backgroundFragmentShader
-})
-const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial)
-scene.add(background)
-
-/**
  * Shooting star
  */
 const shootingStarParameters = {}
 shootingStarParameters.count = 100
 shootingStarParameters.size = 50
-shootingStarParameters.color = new THREE.Color(0.1, 0.1, 0.125)
+shootingStarParameters.color = ''
 
 let shootingStarGeometry = null
 let shootingStarMaterial = null
@@ -159,6 +167,10 @@ let shootingStar = null
 let shootingStars = []
 
 const generateShootingStar = (x, y) => {
+    // Color
+    const shootingStarColor = `hsl(${ Math.random() * 360 }, 15%, 15%)`
+    shootingStarParameters.color = new THREE.Color(shootingStarColor)
+
     // Geometry
     shootingStarGeometry = new THREE.BufferGeometry()
 
@@ -258,6 +270,9 @@ const tick = () =>
     const target = new THREE.Vector3(cursor.x, cursor.y, camera.position.z)
     camera.lookAt(0, 0, 0)
     camera.position.lerp(target, 0.05)
+
+    // Update background
+    backgroundMaterial.uniforms.uTime.value = elapsedTime
 
     // Update stars
     starsMaterial.uniforms.uTime.value = elapsedTime
