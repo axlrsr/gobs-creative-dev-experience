@@ -7,6 +7,9 @@ import starsFragmentShader from './shaders/stars/fragment.glsl'
 import backgroundVertexShader from './shaders/background/vertex.glsl'
 import backgroundFragmentShader from './shaders/background/fragment.glsl'
 
+import shootingStarVertexShader from './shaders/shootingStar/vertex.glsl'
+import shootingStarFragmentShader from './shaders/shootingStar/fragment.glsl'
+
 /**
  * Base
  */
@@ -63,10 +66,10 @@ window.addEventListener('mousemove', (event) =>
 /**
  * Particles
  */
-const parameters = {}
-parameters.count = 200
-parameters.size = 0.01
-parameters.color = new THREE.Color(0.1, 0.1, 0.125)
+const starsParameters = {}
+starsParameters.count = 200
+starsParameters.size = 100
+starsParameters.color = new THREE.Color(0.1, 0.1, 0.125)
 
 let starsGeometry = null
 let starsMaterial = null
@@ -85,11 +88,11 @@ const generateStars = () =>
     // Geometry
     starsGeometry = new THREE.BufferGeometry()
 
-    const positions = new Float32Array(parameters.count * 3)
-    const colors = new Float32Array(parameters.count * 3)
-    const scales = new Float32Array(parameters.count * 1)
+    const positions = new Float32Array(starsParameters.count * 3)
+    const colors = new Float32Array(starsParameters.count * 3)
+    const scales = new Float32Array(starsParameters.count * 1)
 
-    for(let i = 0; i < parameters.count; i++)
+    for(let i = 0; i < starsParameters.count; i++)
     {
         const i3 = i * 3
 
@@ -97,9 +100,9 @@ const generateStars = () =>
         positions[i3 + 1] = (Math.random() - 0.5) * 3
         positions[i3 + 2] = (Math.random() - 0.5) * 3
 
-        colors[i3    ] = parameters.color.r
-        colors[i3 + 1] = parameters.color.g
-        colors[i3 + 2] = parameters.color.b
+        colors[i3    ] = starsParameters.color.r
+        colors[i3 + 1] = starsParameters.color.g
+        colors[i3 + 2] = starsParameters.color.b
 
         scales[i] = Math.random()
     }
@@ -116,7 +119,7 @@ const generateStars = () =>
 
         uniforms:
         {
-            uSize: { value: 100 * renderer.getPixelRatio() },
+            uSize: { value: starsParameters.size * renderer.getPixelRatio() },
             uTime: { value: 0 }
         },
 
@@ -124,7 +127,7 @@ const generateStars = () =>
         fragmentShader: starsFragmentShader
     })
 
-    // Points
+    // Stars
     stars = new THREE.Points(starsGeometry, starsMaterial)
     scene.add(stars)
 }
@@ -143,6 +146,70 @@ const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial)
 scene.add(background)
 
 /**
+ * Shooting star
+ */
+const shootingStarParameters = {}
+shootingStarParameters.count = 100
+shootingStarParameters.size = 50
+shootingStarParameters.color = new THREE.Color(0.1, 0.1, 0.125)
+
+let shootingStarGeometry = null
+let shootingStarMaterial = null
+let shootingStar = null
+let shootingStars = []
+
+const generateShootingStar = (x, y) => {
+    // Geometry
+    shootingStarGeometry = new THREE.BufferGeometry()
+
+    const positions = new Float32Array(shootingStarParameters.count * 3)
+    const colors = new Float32Array(shootingStarParameters.count * 3)
+    const scales = new Float32Array(shootingStarParameters.count * 1)
+
+    for(let i = 0; i < shootingStarParameters.count; i++)
+    {
+        const i3 = i * 3
+
+        positions[i3    ] = (Math.random() - 0.5) * 0.01
+        positions[i3 + 1] = (Math.random() - 0.5) * 0.01
+        positions[i3 + 2] = (Math.random() - 0.5) * 0.01
+
+        colors[i3    ] = shootingStarParameters.color.r
+        colors[i3 + 1] = shootingStarParameters.color.g
+        colors[i3 + 2] = shootingStarParameters.color.b
+
+        scales[i] = Math.random()
+    }
+
+    shootingStarGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    shootingStarGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+    shootingStarGeometry.setAttribute('aScale', new THREE.BufferAttribute(scales, 1))
+
+    // Material
+    shootingStarMaterial = new THREE.ShaderMaterial({
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        vertexColors: true,
+
+        uniforms:
+        {
+            uSize: { value: shootingStarParameters.size * renderer.getPixelRatio() },
+            uTime: { value: 0 }
+        },
+
+        vertexShader: shootingStarVertexShader,
+        fragmentShader: shootingStarFragmentShader
+    })
+
+    // Shooting star
+    shootingStar = new THREE.Points(shootingStarGeometry, shootingStarMaterial)
+    shootingStar.position.set(x, y, 0)
+    
+    shootingStars.push(shootingStar)
+    scene.add(shootingStar)
+}
+
+/**
  * Renderer
  */
 const renderer = new THREE.WebGLRenderer({
@@ -156,6 +223,24 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  * Generate stars
  */
 generateStars()
+
+/**
+ * Generate shootingStar
+ */
+const raycaster = new THREE.Raycaster()
+const mouse = new THREE.Vector2()
+
+window.addEventListener('click', (event) =>
+{
+    mouse.x = event.clientX / sizes.width * 2 - 1
+    mouse.y = - (event.clientY / sizes.height) * 2 + 1
+
+    raycaster.setFromCamera(mouse, camera)
+
+    const intersect = raycaster.intersectObject(background)
+
+    generateShootingStar(intersect[0].point.x, intersect[0].point.y)
+})
 
 /**
  * Animate
@@ -176,6 +261,16 @@ const tick = () =>
 
     // Update stars
     starsMaterial.uniforms.uTime.value = elapsedTime
+
+    // Update shootingStar
+    if(shootingStars.length)
+    {
+        for (let i = 0; i < shootingStars.length; i++) {
+            shootingStars[i].material.uniforms.uTime.value += deltaTime
+            shootingStars[i].position.x += 0.04
+            shootingStars[i].position.y += 0.04
+        }
+    }
 
     // Render
     renderer.render(scene, camera)
