@@ -43,11 +43,13 @@ float cnoise(vec2 P)
   return 2.3 * n_xy;
 }
 
+uniform float uTime;
+
 void main()
 {
   vec3 blackColor = vec3(0.086, 0.114, 0.157);
   vec3 whiteColor = vec3(0.114,0.184,0.259);
-  float strength = cnoise(gl_PointCoord);
+  float strength = cnoise(gl_PointCoord + uTime * 0.05);
 
   vec3 mixedColor = mix(blackColor, whiteColor, strength);
 
