@@ -135,7 +135,7 @@ const generateStars = () =>
 /**
  * Background
  */
-const backgroundGeometry = new THREE.PlaneGeometry(2, 2, 1, 1)
+const backgroundGeometry = new THREE.PlaneGeometry(5, 5, 1, 1)
 const backgroundMaterial = new THREE.ShaderMaterial({
     depthWrite: false,
 
