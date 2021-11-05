@@ -222,6 +222,25 @@ const generateShootingStar = (x, y) => {
 }
 
 /**
+ * Notes
+ */
+var context = new AudioContext()
+var o = null
+var g = null
+
+const playNote = (frequency, type) =>
+{
+    o = context.createOscillator()
+    g = context.createGain()
+    o.type = type
+    o.connect(g)
+    o.frequency.value = frequency
+    g.connect(context.destination)
+    o.start(0)
+    g.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 1)
+}
+
+/**
  * Renderer
  */
 const renderer = new THREE.WebGLRenderer({
@@ -237,13 +256,14 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 generateStars()
 
 /**
- * Generate shootingStar
+ * Generate shootingStar + Note
  */
 const raycaster = new THREE.Raycaster()
 const mouse = new THREE.Vector2()
 
 window.addEventListener('click', (event) =>
 {
+    // Shoot star
     mouse.x = event.clientX / sizes.width * 2 - 1
     mouse.y = - (event.clientY / sizes.height) * 2 + 1
 
@@ -252,6 +272,13 @@ window.addEventListener('click', (event) =>
     const intersect = raycaster.intersectObject(background)
 
     generateShootingStar(intersect[0].point.x, intersect[0].point.y)
+
+    // Play note
+    const freqMin = 4000
+    const freqMax = 8000
+    const frequency = Math.floor(Math.random() * (freqMax - freqMin + 1) + freqMin)
+
+    playNote(frequency, 'sawtooth')
 })
 
 /**
