@@ -166,7 +166,8 @@ let shootingStarMaterial = null
 let shootingStar = null
 let shootingStars = []
 
-const generateShootingStar = (x, y) => {
+const generateShootingStar = (x, y) =>
+{
     // Color
     const shootingStarColor = `hsl(${ Math.random() * 360 }, 15%, 15%)`
     shootingStarParameters.color = new THREE.Color(shootingStarColor)
@@ -307,7 +308,8 @@ const tick = () =>
     // Update shootingStar
     if(shootingStars.length)
     {
-        for (let i = 0; i < shootingStars.length; i++) {
+        for (let i = 0; i < shootingStars.length; i++)
+        {
             shootingStars[i].material.uniforms.uTime.value += deltaTime
             shootingStars[i].position.x += 0.04
             shootingStars[i].position.y += 0.04
