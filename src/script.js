@@ -280,6 +280,10 @@ window.addEventListener('click', (event) =>
     const frequency = Math.floor(Math.random() * (freqMax - freqMin + 1) + freqMin)
 
     playNote(frequency, 'sawtooth')
+
+    // Hide overlay
+    const overlay = document.getElementsByClassName('overlay')
+    overlay[0].classList.add('hidden')
 })
 
 /**
